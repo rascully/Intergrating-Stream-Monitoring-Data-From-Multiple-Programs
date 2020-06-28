@@ -18,13 +18,12 @@ one_data_frame <- function() {
     library(sbtools)
     library(rgdal)
         
-#wd
-    wd <- "C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/tributary-habitat-data-sharing-/"
+#get working directory 
+    wd <- getwd() #"C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/tributary-habitat-data-sharing-/"
    
 #open the the metadata file 
-    
-    metadata  <- as_tibble(read_xlsx(paste0(wd,"Data/Metadata.xlsx") , 3))
-    SN        <- select(metadata, c(Category, LongName, Field, DataType ,AREMPColumn, BLMColumn, EPA2008Column, EPA2004Column, PIBOColumn, Subset_of_Metrics))
+    metadata  <- as_tibble(read_xlsx(paste0(wd,"/Metadata.xlsx") , 3))
+    SN        <- select(metadata, c(Category, LongName, Field, DataType ,AREMPField, BLMField, EPA2008Field, EPA2004Field, PIBOField, SubsetOfMetrics, InDES))
     SN        <- as_tibble(lapply(SN, as.character))
     
     
@@ -33,10 +32,10 @@ one_data_frame <- function() {
 
     # Extract the subset of metrics we are focusing on 
     subset_metrics <- SN %>% 
-                    filter(Subset_of_Metrics== "x")
+                    filter(SubsetOfMetrics== "x" | InDES == 'x')
     
     #save the list of the subset of metrics
-    write.csv(subset_metrics, file="Data/SubSetOfMetricNames.csv", row.names=FALSE)
+    write.csv(subset_metrics, file="SubSetOfMetricNames.csv", row.names=FALSE)
     
    # return(subset_metrics)
   
@@ -49,19 +48,19 @@ one_data_frame <- function() {
     
     
     #Create a empty dataframe with the short names 
-    all_data <- data.frame(matrix(ncol = length(short_names), nrow = 0))
+    all_data <- data.frame(matrix(ncol = length(short_names), nrow = 1))
     colnames(all_data) <- short_names
   
   #list of programs. Removed PIBO before publishing to ScienceBase (2020_3_17)     
   program <-c('EPA2004','EPA2008', 'BLM','AREMP')
         
-        #For loop to add data from each program to one data set 
+  #For loop to add data from each program to one data set 
         for(i in 1:length(program)) {
             #Load the data 
                 if (program[i]=="EPA2008"){
-                    data <-as_tibble(read.csv("Data/EPA_subset.csv"))
+                    data <-as_tibble(read.csv(paste0(wd, "/Data/EPA_NARS_Data0809.csv")))
                   } else if (program[i]=="EPA2004") {
-                    data<- as_tibble(read.csv("Data/EPA_Subset_2004.csv"))
+                    data<- as_tibble(read.csv(paste0(wd, "/Data/EPA_NARS_Data0405.csv")))
                   } else if (program[i]=="BLM") { 
                     #create a URL to access the BLM Data
                     url <- list(hostname = "gis.blm.gov/arcgis/rest/services",
@@ -79,11 +78,11 @@ one_data_frame <- function() {
                   } else if (program[i]=="PIBO"){ 
                     data <- as_tibble(read_xlsx("Data/PIBO_2013.xlsx", 2))
                   } else if (program[i]== "AREMP") {
-                    data <- as_tibble(read.csv("Data/AREMP.csv"))
+                    data <- as_tibble(read.csv(paste0(wd, "/Data/AREMP.csv")))
                   }
          
           #create a column name to reference 
-          column <- paste0(program[i],"Column")
+          column <- paste0(program[i],"Field")
           c      <- ((names(subset_metrics)==column)==TRUE)
           
           # Create a subset of metrics  
@@ -102,7 +101,7 @@ one_data_frame <- function() {
           #Rename to the standard columen names 
           colnames(SubSetData) <- short_names[index]
           
-          #Use index to sub set the data_types to the set of metrics that are in the proram dataset
+          #Use index to sub set the data_types to the set of metrics that are in the program dataset
           p_data_types = data_types[index]
           
           #Assign a datatypes to each metric so it mactches the data frame   
@@ -131,7 +130,9 @@ one_data_frame <- function() {
     write.csv(all_data2, file=file_path, row.names=FALSE)
        
 #Write the intergrated dataset to ScenceBase   
-    authenticate_sb("rscully@usgs.gov", "PNAMPusgs28!")
+    SBUserName  <- readline(prompt="ScienceBase User Name: ")
+    SBPassword  <- readline(prompt="ScienceBase Password: ")
+    authenticate_sb(SBUserName, SBPassword)
     sb_id = "5e3c5883e4b0edb47be0ef1c"
     item_replace_files(sb_id,file_path, title = "Intergrated Dataset")  
         

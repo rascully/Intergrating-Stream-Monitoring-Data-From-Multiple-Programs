@@ -16,8 +16,12 @@ library(sjmisc)
 library(sbtools)
 
 
+#Authenticate ScienceBase
+SBUserName  <- readline(prompt="ScienceBase User Name: ")
+SBPassword  <- readline(prompt="Password: ")
+authenticate_sb(SBUserName, SBPassword)
+
 #Get URL of the AREMP dataset from ScienceBase 
-authenticate_sb("rscully@usgs.gov", "PNAMPusgs28!")
 sb_id <-"5e3dbb2ee4b0edb47be3d646"
 sb_programs <- item_get(sb_id)
 web_links<- item_get_fields(sb_id, "webLinks")
