@@ -23,6 +23,16 @@ one_data_frame <- function() {
    
 #open the the metadata file 
     metadata  <- as_tibble(read_xlsx(paste0(wd,"/Metadata.xlsx") , 3))
+    
+    github_link <- "https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications/blob/39f7ffd7bb5ac688c27de31498919daee4603751/Metadata.xlsx?raw=true"
+    temp_file <- tempfile(fileext = ".xlsx")
+    req <- GET(github_link, 
+               # authenticate using GITHUB_PAT
+               authenticate(Sys.getenv("GITHUB_PAT"), ""),
+               # write result to disk
+               write_disk(path = temp_file))
+    metadata <- readxl::read_excel(temp_file, sheet = 3)
+     
     SN        <- select(metadata, c(Category, LongName, Field, DataType ,AREMPField, BLMField, EPA2008Field, EPA2004Field, PIBOField, SubsetOfMetrics, InDES))
     SN        <- as_tibble(lapply(SN, as.character))
     
