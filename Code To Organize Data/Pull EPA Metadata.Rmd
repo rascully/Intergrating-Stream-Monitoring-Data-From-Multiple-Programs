@@ -23,21 +23,17 @@ library(stringr)
 # 2008-2009 physical habitat Data "https://www.epa.gov/sites/production/files/2015-09/phabmed.csv"
 # 2008-2009 Benthic Macroinvertebrates metadata "https://www.epa.gov/sites/production/files/2015-09/bentcond.txt" 
 # 2008-2009 Benthic reference sites metric, MMI, and conditon class https://www.epa.gov/sites/production/files/2015-09/extbenthicrefcond.txt
+#2008-2009 NRSA 0809 Water Chemistry - Data: https://www.epa.gov/sites/production/files/2015-09/chem.txt
+#2004-2005 NARS https://www.epa.gov/sites/production/files/2014-10/waterchemistry.txt
 
-file_url <-  "https://www.epa.gov/sites/production/files/2015-09/extbenthicrefcond.txt"
+file_url <-  "https://www.epa.gov/sites/production/files/2014-10/waterchemistry.txt"
 # import the data!
 EPA_Metadata <-  read.csv(file_url, sep="\t")
 head(EPA_Metadata)
-```
-```{r}
+
 #d<-setwd('...')
-directory <- 'C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/tributary-habitat-data-sharing-'
-
-#string_len = str_length(file_url)
-string_len = nchar(file_url)
-
-u_name <- substr(file_url,string_len-18,string_len-4)
-u_name <-"08_09_extbenthicrefcond"
+d <- 'C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/Intergrating-Stream-Monitoring-Data-From-Multiple-Programs'
+u_name <-"04_Chem"
 file_name=paste0(d,"/Data/",u_name,".csv")
 #write.csv(EPA_Metadata, file = "C:/Users/rscully/Documents/Projects/USGS/Detail/Data/EPA/meta_data.csv", col.names = TRUE)
 write.csv(EPA_Metadata, file= file_name)

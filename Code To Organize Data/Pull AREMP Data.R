@@ -1,4 +1,4 @@
-#get AREMP data from geodata 
+#Download the AREMP data from the Geodatabase, create a tity data file and updload the file to ScienceBase. 
 
 install.packages("rgdal")
 install.packages("downloader")
@@ -28,17 +28,16 @@ web_links<- item_get_fields(sb_id, "webLinks")
 
 for(i in 1:length(web_links)){ 
   title = web_links[[i]][["title"]]
-   if(grepl("Data", title)){
+   if(grepl("Data:", title)){
    fileURL <-  web_links[[i]][["uri"]]
    }
 }
 
 wd=getwd()
 
-projection<- "+proj=longlat +datum=WGS84 +no_defs"
-
 #Download the file to the Data file in the local repository 
-download(fileURL, paste0(wd,"/Data/NwfpWatershedCondition20yrReport.gdb.zip" ))
+df <- paste0(getwd(),"/Data/NwfpWatershedCondition20yrReport.gdb.zip" )
+download(fileURL, destfile=df )
 
 #Unzip the file into the Data file in the local repository
 unzip("Data/NwfpWatershedCondition20yrReport.gdb.zip", exdir="Data")
@@ -65,6 +64,7 @@ names(data)[names(data) == "site_id"] <- "SITE_ID"
 #Join the location information and the metric data 
 AREMP <- right_join(locations, data, by="SITE_ID")
 
+projection <-  "+proj=longlat +datum=WGS84 +no_defs"
 #Transform to a standard system 
 a_WGS84 <- st_transform(AREMP, crs="+proj=longlat +datum=WGS84 +no_defs")
 
@@ -76,9 +76,20 @@ lat_long <- do.call(rbind, st_geometry(a_WGS84)) %>%
 table       <- (st_geometry(AREMP)<- NULL)
 AREMP_csv   <- bind_cols(AREMP, lat_long)
 
-file_name <- paste0(wd, "/Data/AREMP.csv")
+file_name <- paste0(wd, "/Data/", Sys.Date(), "_Tity_AREMP.csv")
 write.csv(AREMP_csv, file=file_name, row.names=FALSE)
-item_update_files(sb_id, file_name, title="")
+item_replace_files(sb_id, file_name, title="")
+
+
+# Update the lastProcessed date to indicate the last time the code was run 
+sb_dates <- item_get_fields(sb_id, c('dates'))
+
+for(d in 1:length(sb_dates)){ 
+   if(sb_dates[[d]][["type"]]=='lastProcessed') {
+      sb_dates[[d]][["dateString"]] <- Sys.Date() 
+      items_update(sb_id, info = list(dates = sb_dates)) 
+   }
+}  
 
 #Save a GeoSJSON file need to check this code
 #st_write(a_WGS84,dsn="Data/AREMP.GeoJSON", layer="AREMP", driver="GeoJSON")

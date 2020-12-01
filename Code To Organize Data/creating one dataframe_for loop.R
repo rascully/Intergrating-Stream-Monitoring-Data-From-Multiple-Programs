@@ -162,6 +162,16 @@ one_data_frame <- function() {
     writeOGR(spatial_data,'Data/data_all.geojson', layer="", driver="GeoJSON")
     #Update ScienceBase Item 
     item_replace_files(sb_id, json_file, title="Intergrated Dataset") 
+    
+    # Update the lastProcessed date to indicate the last time the code was run 
+    sb_dates <- item_get_fields(sb_id, c('dates'))
+    
+    for(d in 1:length(sb_dates)){ 
+      if(sb_dates[[d]][["type"]]=='lastProcessed') {
+        sb_dates[[d]][["dateString"]] <- Sys.Date() 
+        items_update(sb_id, info = list(dates = sb_dates)) 
+      }
+    }      
 
 
 }
