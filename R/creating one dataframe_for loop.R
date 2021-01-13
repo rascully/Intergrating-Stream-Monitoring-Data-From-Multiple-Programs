@@ -4,6 +4,9 @@ install.packages("tidyverse")
 install.packages("readxl")
 install.packages("sbtools")
 
+source("R/Function Record Level Table.R")
+test = RL_Table(sb_id, program)
+
 # Create one dataframe of a subset of metrcs across the four prorams 
 one_data_frame <- function() {
     library(dplyr)
@@ -183,8 +186,6 @@ one_data_frame <- function() {
         mutate(type= "Stream_Habitat_Metrics") %>%
         mutate(modified = Sys.Date())  %>%
         
-        
-
 #Write data to a .csv
     file_path <- paste0(getwd(), "/Data/All_Data.csv")
     write.csv(all_data2, file=file_path, row.names=FALSE)
