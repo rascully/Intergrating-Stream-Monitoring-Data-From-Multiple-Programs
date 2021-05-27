@@ -4,7 +4,7 @@
 #2013/14 NRSA stream data sets with the Macrioneverterbreate, physical habitat and water chemistry metric and 
 #indicator data. The data set is then save to the GitHub page and the ScienceBase Item. 
 
-download_EPA_NRSA <- function(SBUserName, SBPassword) {
+download_EPA_NRSA <- function(SBUserName, SBPassword, CRS) {
 library(tidyverse)
 library(rvest)
 library(stringr)
@@ -74,14 +74,14 @@ for(i in 1:length(location_data$web1)) {
                               LAT_DD83= LAT_DD) 
     #Convert HUC  data to characters not integers 
     data1[str_detect(names(data1), "HUC")] <- data1 %>% 
-                                                select(contains("HUC")) %>% 
+                                                dplyr::select(contains("HUC")) %>% 
                                                 mutate_each(as.character) 
     
     } else { 
     data2     <- read.csv(temp_file)
     #convert data type to characters 
     data2[str_detect(names(data2), "HUC")] <- data2 %>% 
-                                              select(contains("HUC")) %>% 
+                                              dplyr::select(contains("HUC")) %>% 
                                               mutate_each(as.character)
   if(any(str_detect(names(data2),"EPA_REG"))==T) {
        data2$EPA_REG <- as.character(data2$EPA_REG)
@@ -93,7 +93,7 @@ for(i in 1:length(location_data$web1)) {
 
 ##### Convert string dates to dates #####
 data1$DATE_COL <- as.Date.character(data1$DATE_COL, format="%m/%d/%Y" )
-data1$PUBLICATION_DATE <- as.Date.character(data1$PUBLICATION_DATE, format="%m/%d/%Y" )
+#data1$PUBLICATION_DATE <- as.Date.character(data1$PUBLICATION_DATE, format="%m/%d/%Y" )
 
 blank_year             <- is.na(data1$YEAR)
 data1$YEAR[blank_year] <- format(data1$DATE_COL[blank_year],format="%Y")
@@ -144,7 +144,7 @@ data1<- data1 %>%
 
 #remove columns with .y indicating duplicate columns 
 data1<- data1 %>% 
-      select(-contains(c(".y", "x,x", "y.y")))
+      dplyr::select(-contains(c(".y", "x,x", "y.y")))
 
 #Rename columns with .x, so that field names match the original fields in the metadata 
 names(data1) <- str_remove(names(data1), ".x")

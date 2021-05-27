@@ -1,17 +1,20 @@
 #####Using the data exchange specifications combined monitoring stream data from multiple sources. #####
-# Load the libraries 
-    library(dplyr)
-    library(readxl)
-    library(tidyverse)
-    library(openxlsx)
-    library(sf)
-    library(tmap)
-    library(httr)
-    library(data.table)
-    library(sp)
-    library(sbtools)
-    library(rgdal)
-   
+
+
+integrate_data <- function(SBUserName, SBPassword){
+  
+  library(dplyr)
+  library(readxl)
+  library(tidyverse)
+  library(openxlsx)
+  library(sf)
+  library(tmap)
+  library(httr)
+  library(data.table)
+  library(sp)
+  library(sbtools)
+  library(rgdal)
+  
 
 # Load the functions to build the data tables to the Stream Monitoring Data
 # Exchange Specifications in this repository: https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications
@@ -21,8 +24,8 @@ program <-c("NRSA","AREMP", "AIM")
 
 
 ##### Sign into ScienceBase and pull data set information #####
-SBUserName  <- readline(prompt="ScienceBase User Name: ")
-SBPassword  <- readline(prompt="ScienceBase Password: ")
+#SBUserName  <- readline(prompt="ScienceBase User Name: ")
+#SBPassword  <- readline(prompt="ScienceBase Password: ")
 authenticate_sb(SBUserName, SBPassword)
 
 #ScienceBase ID of the parent item for integrating stream habitat metrics 
@@ -53,7 +56,7 @@ record_level_table     <-  record_level_table %>%
                              mutate_all(as.character)
   
 #name the columns in the dataframe with the Record Level terms
-colnames(record_level_table)  <- Record_level$Term  
+colnames(record_level_table)  <- Record_level$measurementTerm 
 
 # Fill in the Reach Level table with information about each data set 
   for(i in 1:length(sb_child)){ 
@@ -61,7 +64,7 @@ colnames(record_level_table)  <- Record_level$Term
     record_level_table$datasetID[i]      <- sb_child[[i]][["id"]]
     }
   record_level_table$modified    <-   Sys.Date()
-  record_level_table$type        <- "Stream Habitat Moitoring Data"
+  record_level_table$type        <- "Water Quality and Physical Habitat Structure"
   
 ##### Open Git File Of Crosswalk #####
     
@@ -79,9 +82,9 @@ colnames(record_level_table)  <- Record_level$Term
     cross_walk      <- read.csv(file= temp_file)
     cross_walk      <- cross_walk %>% 
                         mutate_all(na_if, "")
-    CW              <- select(cross_walk, c(LongName, measurementTerm, DataType ,AREMPField, AIMField, NRSAField, PIBOField))
+    CW              <- dplyr::select(cross_walk, c(Table,LongName, measurementTerm, DataType ,AREMPField, AIMField, NRSAField, PIBOField))
     subset_metrics  <- as_tibble(lapply(CW, as.character))
-    subset_methods  <- select(cross_walk, contains("Term")| contains("MethodID")| contains("Unit") |"measurementType"|"measurementID")
+    subset_methods  <- dplyr::select(cross_walk, contains("Term")| contains("MethodID")| contains("Unit") |"measurementType"|"measurementID")
     
     
     #array of the field names used in the combined data set  
@@ -150,25 +153,31 @@ colnames(record_level_table)  <- Record_level$Term
                   #Download the data table from the ScienceBase item
                     file_name<- paste0(getwd(),"/data/", "Tity_AREMP_Data_Set.csv")
                     data <-as_tibble(read.csv(file_name))
+                
                   #Fill in Record Level table 
                     index <- str_detect(record_level_table$datasetName, "AREMP")
-                    record_level_table$InstitutionID[index]<- "USFS"
-                    record_level_table$CollectionID[index]<- "AREMP"
+                    record_level_table$InstitutionID[index]             <- "USFS"
+                    record_level_table$CollectionID[index]              <- "AREMP"
+                    record_level_table$bibilographicCititation[index]   <- 	"Miller, Stephanie A.; Gordon, Sean N.; Eldred, Peter; Beloin, Ronald M.; Wilcox, Steve; Raggon, Mark;
+                                                                    Andersen, Heidi; Muldoon, Ariel. 2017. Northwest Forest Plan—the first 20 years (1994–2013): watershed 
+                                                                    condition status and trends. Gen. Tech. Rep. PNW-GTR-932. Portland, OR: U.S. Department of Agriculture,
+                                                                    Forest Service, Pacific Northwest Research Station. 74 p."
                     datasetID <- record_level_table$datasetID[index]
+                   
               }
          
           #create a column name to reference 
           column <- paste0(p,"Field")
           #Data frame of the the names of the fields in the cross walk 
           program_metric_names <- subset_metrics %>% 
-              select(c(column,"measurementTerm", "DataType")) %>% 
+              dplyr::select(c(column,"measurementTerm", "DataType")) %>% 
               drop_na(column)
 
           
           #check the metrics in the cross_walk are in the data set and create a vector of the 
           #names for the final data set 
           
-          specific_names <- as.vector(unlist(select(program_metric_names, column)))
+          specific_names <- as.vector(unlist(dplyr::select(program_metric_names, column)))
           
           CW_names_index        <- names(data) %in% specific_names
           CW_names              <- names(data)[CW_names_index]
@@ -183,7 +192,7 @@ colnames(record_level_table)  <- Record_level$Term
           SubSetData <- 0
           #Subset the data from the master dataframe 
           SubSetData <- data %>%
-            select(CW_names)
+            dplyr::select(CW_names)
           
           #Rename to the standard column names to the master data set names 
           for(n in 1:length(data_set_names)){
@@ -214,7 +223,7 @@ colnames(record_level_table)  <- Record_level$Term
     }
       
 
-  plot(all_data$verbatimLongitude, all_data$verbatimLatitude)
+ # plot(all_data$verbatimLongitude, all_data$verbatimLatitude)
   all_data2 = all_data %>%
               filter(!is.na(verbatimLongitude) & !is.na(verbatimLatitude))
   
@@ -224,15 +233,15 @@ colnames(record_level_table)  <- Record_level$Term
   all_data2$locationID  <- all_data2$verbatimlocationID
   
   #create a list of sites with unique locations 
-  u_locations <- select(all_data2, (c(locationID, verbatimLatitude, verbatimLongitude,
+  u_locations <- dplyr::select(all_data2, (c(locationID, verbatimLatitude, verbatimLongitude,
                                       verbatimWaterbody, Program)))
   unique_locations <- distinct(u_locations)
-  unique_path <- paste0(getwd(), "/Data/unique_locations.csv")
+  unique_path <- paste0(getwd(), "/data/unique_locations.csv")
   write.csv(unique_locations, file=unique_path, row.names=FALSE)
   
   
 ####Subset the data set to match the data exchange specifications documented on https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications#####
-  
+
   github_link <- "https://raw.githubusercontent.com/rascully/Stream-Monitoring-Data-Exchange-Specifications/master/Tables/Location_table.csv" 
   temp_file <- tempfile(fileext = ".csv")
   req <- GET(github_link, 
@@ -243,7 +252,7 @@ colnames(record_level_table)  <- Record_level$Term
   
   Location_table<- read.csv(temp_file)
   location_table <- all_data2 %>% 
-                    select(one_of(c("datasetID", "Program", Location_table$measurementTerm))) %>% 
+                    dplyr::select(one_of(c("datasetID", "Program", Location_table$measurementTerm))) %>% 
                     distinct()
    
   
@@ -257,19 +266,16 @@ colnames(record_level_table)  <- Record_level$Term
              write_disk(path = temp_file))
   Event_table <- read.csv(temp_file)    
   event_table <- all_data2 %>% 
-                  select(one_of(c("Program","locationID", Event_table$measurementTerm)))
-  event_table$ver
-  
-#Create the MeasuremetOrFact table
- 
+                  dplyr::select(one_of(c("Program","locationID", Event_table$measurementTerm)))
+
+#Create the measurment of fact table 
  measurement_names <- CW %>% 
-                    filter(str_detect(CW$Category, "ControlledVocabulary")) %>% 
-                    select(measurementTerm) %>% 
-                    pull()
-
-
+      filter(str_detect(CW$Table, "ControlledVocabulary"))  %>% 
+      dplyr::select(measurementTerm) %>% 
+      pull()
+  
  measurement <- all_data2 %>% 
-   select(Program, eventID, EventDate, measurement_names) %>% 
+   dplyr::select(Program, eventID, EventDate, measurement_names) %>% 
    add_column(measurementMethod= "", measurementID ='', measurementUnit='', measurementRemarks='', measurementType='') %>% 
    rename(measurementDeterminedDate=EventDate, measurementDeterminedBy=Program)
  
@@ -282,19 +288,19 @@ colnames(record_level_table)  <- Record_level$Term
 for(term in unique(measurment_or_fact_table$measurementTerm)){ 
   #Add the measurmentID to the measurement or fact table 
    method_info <- subset_methods %>% 
-     filter(Term== term)
+     filter(measurementTerm== term)
    
    m_index                                            <- measurment_or_fact_table$measurementTerm==term
-   measurment_or_fact_table$measurementID[m_index]    <- select(method_info, "measurementID")
-   measurment_or_fact_table$measurementUnit[m_index]  <- select(method_info, Unit)
+   measurment_or_fact_table$measurementID[m_index]    <- dplyr::select(method_info, "measurementID")
+   measurment_or_fact_table$measurementUnit[m_index]  <- dplyr::select(method_info, measurementUnit)
    #add the measurement type 
-   measurment_or_fact_table$measurementType[m_index]  <- select(method_info, "VocabularyCatagory")
+   measurment_or_fact_table$measurementType[m_index]  <- dplyr::select(method_info, "measurementType")
      
    for(p in program){
    # Add the link to the MonitoringResources.org 
      metric_field <- paste0(p, "CollectionMethodID")  
      mr_method <- method_info %>% 
-         select(contains(metric_field)) 
+         dplyr::select(contains(metric_field)) 
     
      index <- measurment_or_fact_table$measurementTerm==term & measurment_or_fact_table$measurementDeterminedBy==program
      measurment_or_fact_table$measurementMethod[index] <- mr_method
@@ -306,24 +312,29 @@ measurment_or_fact_table <- measurment_or_fact_table %>%
                                  relocate(c("eventID",  "measurementType", "measurementID","measurementTerm","measurementValue", "measurementUnit",
                                             "measurementDeterminedDate", "measurementDeterminedBy","measurementMethod", "measurementRemarks" ))  
         
-#Save the data set 
- list_of_datasets <- list("Record_level" = record_level_table, "location"= location_table, "Event"= event_table,
-                          "Measurment_or_Fact"= measurment_or_fact_table)
- 
- write.xlsx(list_of_datasets, file = "data/Integrated Data Set.xlsx") 
- 
+
+
+
 #Write data to a .csv
     file_name <- paste0("/Data/", Sys.Date(), "All_Data.csv")
-    file_path <- paste0(getwd(), "/Data/Flat Integrated Data Set.csv")
+    file_path <- paste0(getwd(), "/Data/Flat Integrated Data Set.xlsx")
     write.csv(all_data2, file=file_path, row.names=FALSE)
        
-#Write the integrated data set to ScenceBase   
-    sb_id = "5e3c5883e4b0edb47be0ef1c"
-    file_name = "data/Integrated Data Set.xlsx"
-    item_replace_files(sb_id,file_name, title = "IntegratedDataSet")  
 
+#Save the data set 
+    list_of_datasets <- list("Record_level" = record_level_table, "location"= location_table, "Event"= event_table,
+                             "Measurment_or_Fact"= measurment_or_fact_table)
+    file_name = "data/Integrated Data Set.xlsx"
+    openxlsx::write.xlsx(list_of_datasets, file = file_name) 
+
+  #Write the integrated data set to ScenceBase  
+    authenticate_sb(SBUserName, SBPassword)
+    sb_id = "5e3c5883e4b0edb47be0ef1c"
+    item_replace_files(sb_id,file_name, title = "IntegratedDataSet")  
+    
 #Update ScienceBase Item   
     item_replace_files(sb_id,unique_path, title ="A list of unique data collection locations")  
+    
 
 # Update the last Processed date to indicate the last time the code was run 
     sb_dates <- item_get_fields(sb_id, c('dates'))
@@ -333,9 +344,10 @@ measurment_or_fact_table <- measurment_or_fact_table %>%
         sb_dates[[d]][["dateString"]] <- Sys.Date() 
         items_update(sb_id, info = list(dates = sb_dates)) 
       }
-    }      
+    }
+    
+    
+return(list_of_datasets) 
 
-
-
-
+}
 

@@ -9,16 +9,18 @@ library(tidyverse)
 library(geojsonio)
 library(sjmisc)
 library(sbtools)
+library(raster)
 
+download_AREMP<- function(SBUserName, SBPassword, CRS){
 
 #Authenticate ScienceBase
-SBUserName  <- readline(prompt="ScienceBase User Name: ")
-SBPassword  <- readline(prompt="Password: ")
-authenticate_sb(SBUserName, SBPassword)
+#SBUserName  <- readline(prompt="ScienceBase User Name: ")
+#SBPassword  <- readline(prompt="Password: ")
+   
 
-SBUserName <- "rscully@usgs.gov"
-SBPassword <- "pnampUSGS69!"
 authenticate_sb(SBUserName, SBPassword)
+   
+
 
 #Get URL of the AREMP dataset from ScienceBase 
 sb_id <-"5e3dbb2ee4b0edb47be3d646"
@@ -33,8 +35,6 @@ for(i in 1:length(web_links)){
 }
 
 
-wd=getwd()
-
 #Download the file to the Data file in the local repository 
 df <- paste0(getwd(),"/Data/NwfpWatershedCondition20yrReport.gdb.zip" )
 download(fileURL, destfile=df )
@@ -44,7 +44,7 @@ unzip("Data/NwfpWatershedCondition20yrReport.gdb.zip", exdir="Data")
 
 #Define the file path to the geodata base, if the ARAMP changes their file structure this will need to be updated 
 path <- '/Data/NwfpWatershedCondition20yrReport.gdb'
-fgdb <- paste0(wd, path)
+fgdb <- paste0(getwd(), path)
 
 #investigate the layers in the AREMP geodatabase 
 subset(ogrDrivers(), grepl("GDB", name))
@@ -52,6 +52,7 @@ fc_list <- ogrListLayers(fgdb)
 
 #load the locations, stream and habitat data from the ARAMP geodatabase file 
 locations   <- st_read(dsn=fgdb, layer = fc_list[10])
+#st_crs(locations)
 data        <- st_read(dsn=fgdb, layer = fc_list[11])
 
 #macro and temp data is a score summarized by watershed need to figure out how to get the metric data 
@@ -65,23 +66,34 @@ names(data)[names(data) == "site_id"] <- "SITE_ID"
 AREMP <- right_join(locations, data, by="SITE_ID")
 
 projection <-  "+proj=longlat +datum=WGS84 +no_defs"
-#Transform to a standard system 
-a_WGS84 <- st_transform(AREMP, crs="+proj=longlat +datum=WGS84 +no_defs")
+#save the CRS of ARAMP
+#print(st_crs(locations))
 
-#pull coordinates out of shapefile 
-lat_long <- do.call(rbind, st_geometry(a_WGS84)) %>% 
-  as_tibble(.name_repair = "unique") %>% setNames(c("longitude","lattitude", "c3", "c4"))
+if(compareCRS(CRS, st_crs(locations))==TRUE){
+      print("AREMP coordinate reference system matches the coordinate system of the data exchange standards for the intergrated data set.")
+   } else {
+      print("AREMP coordinate reference system does not match the coordinate system of the data exchange standards for the intergrated data set.")
+      #Transform to a standard system 
+      a_WGS84 <- st_transform(AREMP, crs="+proj=longlat +datum=WGS84 +no_defs")
+      
+      #pull coordinates out of shapefile 
+      lat_long <- do.call(rbind, st_geometry(a_WGS84)) %>% 
+         as_tibble(.name_repair = "unique") %>% setNames(c("longitude","lattitude", "c3", "c4"))
+      
+      # create a table of the AREMP data with lat, and long 
+      table       <- (st_geometry(AREMP)<- NULL)
+      AREMP_csv   <- bind_cols(AREMP, lat_long)
+      }
+   
 
-# create a table of the AREMP data with lat, and long 
-table       <- (st_geometry(AREMP)<- NULL)
-AREMP_csv   <- bind_cols(AREMP, lat_long)
+
 
 #Delete the old AREMP data file 
 files <- list.files(paste0(getwd(), "/data"))
 files_remove <- paste0(getwd(), "/data/", files[str_detect(files, "AREMP")])
 file.remove(files_remove)
 
-file_name <- paste0(wd, "/data/Tity_AREMP_Data_Set.csv")
+file_name <- paste0(getwd(), "/data/Tity_AREMP_Data_Set.csv")
 write.csv(AREMP_csv, file=file_name, row.names=FALSE)
 item_replace_files(sb_id, file_name, title="")
 
@@ -98,5 +110,6 @@ for(d in 1:length(sb_dates)){
 
 #Save a GeoSJSON file need to check this code
 #st_write(a_WGS84,dsn="Data/AREMP.GeoJSON", layer="AREMP", driver="GeoJSON")
-
+return(AREMP_csv)
+} 
 
