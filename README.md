@@ -20,7 +20,7 @@ We built the integrated data set based on the [workflow](https://github.com/rasc
 <li> Tidy AREMP Data Set </li>
 <li> Tidy NRSA Data Set </li> 
 <li> [BLM AIM GIS Server Data]() </li>
-<li> [Data Exchange Specifications](https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications) </li> 
+<li>  -[Data Exchange Specifications](https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications) </li> 
 <li>[Schema Cross walk](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv), cross walking original data sets fields to the controlled vocabulary</li>
 <li>[MonitoringResources.org Methods](MonitoringResources.org)</li>
 </ul>
