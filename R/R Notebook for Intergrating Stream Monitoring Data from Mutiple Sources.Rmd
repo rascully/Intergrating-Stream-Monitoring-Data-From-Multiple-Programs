@@ -1,5 +1,5 @@
 ---
-title: "Intergrating Stream Monitoring Data From Mutiple Programs"
+title: "Intergrating Stream Monitoring Data"
 output:
   html_document:
     df_print: paged
@@ -79,23 +79,29 @@ unlink(temp_file)
 
 controlled_vocabulary %>%
   group_by(measurementType)%>%
-  count(measurementType, sort=TRUE) %>% 
+  count("measurementType") %>% 
   kbl() %>% 
   kable_styling()
 
 ```
 
-#Refomrating Data 
+#Reformating Data 
 
 Each program releases its data in different ways. EPA NARS releases data online in a .CSV file every five years after data collection, BLM AIM releases an ArcGIS server updates every year, and USFS AREMP releases a ArcGIS geodatabase every five years. To integrate data sets from different sources the original data sets might need to be reformatted. For this pilot project two of the data sets need to be reformatted and projected. The final data set coordinates will be shared in decimal degrees in WGS84. 
 
 ```{r}
 CRS<-  "+proj=longlat +datum=WGS84 +no_defs"
 
-SBUserName  <- readline(prompt="ScienceBase User Name: ")
-SBPassword  <- readline(prompt="ScienceBase Password: ")
-
+#SBUserName  <- readline(prompt="ScienceBase User Name: ")
+SBUserName <- "rscully@usgs.gov"
+SBPassword <- "pnampUSGS89!"
 ```
+
+```{r}
+#SBPassword  <- readline(prompt="ScienceBase Password: ")
+SBPassword <- "pnampUSGS89!"
+```
+
 ##EPA Rivers and Streams Data 
 
 EPA collects data across the United States; they share their metric level data here https://www.epa.gov/national-aquatic-resource-surveys/data-national-aquatic-resource-surveys. They release data sets for each two-year collection period, 2004-2005 and 2008-2009, 2013-2014. The 2018-2019 data set is not posted. We will update this when the data are released.
@@ -107,6 +113,7 @@ You can find the metadata and the data used to create one dataset for each year 
 
 ```{r}
 setwd("C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/Intergrating-Stream-Monitoring-Data-From-Multiple-Programs")
+
 source(paste0(getwd(), "/R/Scrape EPA Data.R"))
 
 NRSA_data <- download_EPA_NRSA(SBUserName,SBPassword, CRS)
@@ -157,6 +164,7 @@ url <- list(hostname = "gis.blm.gov/arcgis/rest/services",
                                   returnGeometry = "true",
                                   f = "geojson")) %>% 
                       setattr("class", "url")
+                    
                     request <- build_url(url)
                     BLM <- st_read(request, stringsAsFactors = TRUE) #Load the file from the Data file
                     st_crs(BLM)
@@ -172,38 +180,81 @@ url <- list(hostname = "gis.blm.gov/arcgis/rest/services",
   m <- BLM%>% 
       leaflet() %>%
       addTiles() %>%
-      addCircles(lng=~BTMLONG, lat= ~BTMLAT, color="blue") 
+      addCircles(lng=~MIDLONG, lat= ~MIDLAT, color="blue") 
   
   m
   
 ```
+#USFS PIBO Dataset 
 
-#Build an Intergrated Dtaa Set 
+USFS does not published their data but it can be accessed via a data request by contacting: ADD CONTACT INFORMATION
+
+You can find the metadata and the data used to create one dataset on ScienceBase:
+ 
+NEED TO FIGURE OUT IF WE NEED TO UPDATE THE CORRDINATE SYSTEM OF THE PIBO LOCATION DATA 
 
 ```{r}
-setwd("C:/Users/rscully/Documents/Projects/Habitat Data Sharing/2019_2020/Code/Intergrating-Stream-Monitoring-Data-From-Multiple-Programs")
-source(paste0(getwd(),"/R/creating one dataframe_for loop.R"))
+PIBO <- as_tibble(read_xlsx("Data/2020_Seasonal_Sum_PIBO.xlsx", 2))
+  m <- PIBO%>% 
+      leaflet() %>%
+      addTiles() %>%
+      addCircles(lng=~Long, lat= ~Lat, color="orange") 
+  
+  m
+
+```
+
+#Build an Intergrated DataSet 
+
+```{r}
+
+SBUserName <- "rscully@usgs.gov"
+SBPassword <- "pnampUSGS89!"
+
+source("./R/creating one dataframe_for loop.R")
+
 data <-integrate_data(SBUserName, SBPassword)
 
+pal <- colorFactor(c("green","red","blue", "orange"), domain=c("NRSA", "AREMP", "AIM", "PIBO"))
 
-pal <- colorFactor(c("green","red","blue"), domain=c("NRSA", "AREMP", "AIM"))
-
-m <- data$location%>% 
+m <- data$SamplingFeature%>% 
       leaflet() %>%
       addTiles() %>%
       addCircles(lng=~verbatimLongitude, lat= ~verbatimLatitude, color=~pal(Program), 
                  popup= ~paste0("<b>",Program, "</b>", 
-                                "<HR>", "<b>", "LocationID ", "</b>",  locationID, "</HR>",
+                                "<HR>", "<b>", "SamplingFeatureID ", "</b>",  SamplingFeatureID, "</HR>",
                                         "<br>")) %>%
                                 addLegend("topleft", pal=pal, values= ~Program, opacity =1)
 
 m
 
-data$Event %>%
+actions <- data$Action 
+countEvents <- data$Action %>%
   group_by(Program)%>%
-  count(Program, sort=TRUE) %>% 
-  kbl(col.names = c("Program", "Count of Visits")) %>% 
-  kable_styling() 
+  count(Program) 
+
+
+countLocations <- data$SamplingFeature %>%
+  group_by(Program)%>%
+  count(Program) 
+
+
+summary_df <- left_join(countLocations,countEvents, by="Program") 
+names(summary_df)[2]="Locations"
+names(summary_df)[3]="Events"
+
+write.csv(summary_df, paste0(getwd(), "/data/summary of events and locations.csv"))
+
+summary_df %>% 
+  kbl(col.names = c("Program", "Count of Locations", "Count of Events")) %>% 
+    kable_styling()
+  
+
+metrics <- data$Results %>% 
+    group_by(measurementTerm) %>% 
+    count(measurementTerm, sort=TRUE)
+
+write.csv(metrics, paste0(getwd(), "/data/summary of metrics.csv"))
 
 ```
 

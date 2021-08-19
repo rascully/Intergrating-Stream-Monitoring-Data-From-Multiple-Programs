@@ -10,16 +10,16 @@ Before we could build the integrated data set we pre-processed two of the input 
 ### Pre-processing 
 We pre-process the AREMP and EPA NRSA data sets to flatten them and save the outputs in the data file. 
 <ul>
-<li>Code to Download and [Tidy AREMP Data](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/R/Pull%20AREMP%20Data.R) and [Tity AREMP Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv) </li>
-<li> Code to Scrape and [Tidy NRSA Data](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/R/Scrape%20EPA%20data.R) and [Tity NRSA Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tidy_NRSA_Data_Set.csv)</li>
+<li>[Code to Download and Tidy AREMP Data](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/R/Pull%20AREMP%20Data.R) and [Tity AREMP Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv) </li>
+<li> [Code to Scrape and Tidy NRSA Data](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/R/Scrape%20EPA%20data.R) and [Tity NRSA Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tidy_NRSA_Data_Set.csv)</li>
 </ul>
 
 # Inputs 
 We built the integrated data set based on the [workflow](https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications/blob/master/Figures/WorkFlow.png) documented in the data exchange specifications, with the following inputs:  
 <ul>
-<li> [Tidy AREMP Data Set]()</li>
+<li> [Tidy AREMP Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv)</li>
 <li> [Tidy NRSA Data Set](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tidy_NRSA_Data_Set.csv) </li> 
-<li> [BLM AIM GIS Server Data](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv) </li>
+<li> [BLM AIM GIS Server Data](https://landscape.blm.gov/geoportal/rest/find/document;jsessionid=4CFD5847911DC2584BD9B1F23E98C96C?searchText=isPartOf%3AAIM&contentType=liveData&start=1&max=10&f=searchpage) </li>
 <li> [Data Exchange Specifications](https://github.com/rascully/Stream-Monitoring-Data-Exchange-Specifications) </li> 
 <li> [Schema Cross walk](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Tity_AREMP_Data_Set.csv), cross walking original data sets fields to the controlled vocabulary </li>
 <li>[MonitoringResources.org](MonitoringResources.org) Methods </li>
