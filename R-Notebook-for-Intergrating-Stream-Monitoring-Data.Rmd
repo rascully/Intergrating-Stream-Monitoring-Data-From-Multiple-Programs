@@ -103,6 +103,9 @@ We use ScienceBase to document the metadata about these datasets. To run the fol
 SBPassword  <- readline(prompt="ScienceBase Password: ")
 SBUserName  <- readline(prompt="ScienceBase User Name: ")
 
+SBUserName <- "rscully@usgs.gov"
+SBPassword <- "pnampUSGS89!"
+
 ```
 
 ## EPA Rivers and Streams Data 
@@ -253,6 +256,6 @@ summary_df %>%
 ```
 
 
-The final data set is save to ScienceBase 
+The data tables are save to ScienceBase and in the data folder of this repository title [Integrated Data Set.xlsx](https://github.com/rascully/Integrating-Stream-Monitoring-Data-From-Multiple-Programs/blob/master/Data/Integrated%20Data%20Set.xlsx)
 
 
